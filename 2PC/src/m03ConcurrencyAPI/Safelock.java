@@ -14,7 +14,9 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.Random;
 
 public class Safelock {
+
     static class Friend {
+
         private final String name;
         private final Lock lock = new ReentrantLock();
 
@@ -33,7 +35,7 @@ public class Safelock {
                 myLock = lock.tryLock();
                 yourLock = bower.lock.tryLock();
             } finally {
-                if (! (myLock && yourLock)) {
+                if (!(myLock && yourLock)) {
                     if (myLock) {
                         lock.unlock();
                     }
@@ -44,13 +46,13 @@ public class Safelock {
             }
             return myLock && yourLock;
         }
-            
+
         public void bow(Friend bower) {
             if (impendingBow(bower)) {
                 try {
                     System.out.format("%s: %s has"
-                        + " bowed to me!%n", 
-                        this.name, bower.getName());
+                            + " bowed to me!%n",
+                            this.name, bower.getName());
                     bower.bowBack(this);
                 } finally {
                     lock.unlock();
@@ -58,21 +60,22 @@ public class Safelock {
                 }
             } else {
                 System.out.format("%s: %s started"
-                    + " to bow to me, but saw that"
-                    + " I was already bowing to"
-                    + " him.%n",
-                    this.name, bower.getName());
+                        + " to bow to me, but saw that"
+                        + " I was already bowing to"
+                        + " him.%n",
+                        this.name, bower.getName());
             }
         }
 
         public void bowBack(Friend bower) {
-            System.out.format("%s: %s has" +
-                " bowed back to me!%n",
-                this.name, bower.getName());
+            System.out.format("%s: %s has"
+                    + " bowed back to me!%n",
+                    this.name, bower.getName());
         }
     }
 
     static class BowLoop implements Runnable {
+
         private Friend bower;
         private Friend bowee;
 
@@ -80,25 +83,25 @@ public class Safelock {
             this.bower = bower;
             this.bowee = bowee;
         }
-    
+
         public void run() {
             Random random = new Random();
-           //for (int i=0;i<20;i++) {
+            //for (int i=0;i<20;i++) {
             for (;;) {
                 try {
                     Thread.sleep(random.nextInt(10));
-                } catch (InterruptedException e) {}
+                } catch (InterruptedException e) {
+                }
                 bowee.bow(bower);
             }
         }
     }
-            
 
     public static void main(String[] args) {
-        final Friend alphonse =
-            new Friend("Alphonse");
-        final Friend gaston =
-            new Friend("Gaston");
+        final Friend alphonse
+                = new Friend("Alphonse");
+        final Friend gaston
+                = new Friend("Gaston");
         new Thread(new BowLoop(alphonse, gaston)).start();
         new Thread(new BowLoop(gaston, alphonse)).start();
     }
