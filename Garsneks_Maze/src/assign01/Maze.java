@@ -2,9 +2,13 @@ package assign01;
 
 import java.awt.Color;
 import java.awt.Point;
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
+import lv.edgarsgars.mathematics.Vector;
+import lv.edgarsgars.utils.VectorUtils;
+import lv.edgarsgars.vizualization.Plot;
 
 /**
  * Generates a perfect N-by-N maze.
@@ -95,7 +99,7 @@ public class Maze {
     }
 
     // solve the maze starting from the start state
-    public List<Point2D> solve() {
+    public List<Point2D> solve(ForkJoinPool pool) {
         for (int x = 1; x <= N; x++) {
             for (int y = 1; y <= N; y++) {
                 visited[x][y] = false;
@@ -103,7 +107,7 @@ public class Maze {
         }
 
         //Call solver with your implementation of algorithm. Initial position x = 1, y = 1
-        return solver.solveMaze(1, 1);
+        return solver.solveMaze(1, 1, pool);
     }
 
     // draw the maze
@@ -161,34 +165,55 @@ public class Maze {
     }
 
     // Client
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
+        //int threadCount = 5;
+        int[] ns = new int[]{30, 50, 100};
+        for (int threadCount = 1; threadCount < 9; threadCount++) {
 
-        int N = 100;
-        long totalTime = 0;
-        for (int s = 0; s < 100; s++) {
-            //StdDraw.clear();
-            Maze maze = new Maze(N);
-            ////StdDraw.show(0);
-            MazeSolver solver = new MazeSolver(maze);
-            maze.setSolver(solver);
+            ForkJoinPool pool = new ForkJoinPool(threadCount);
+            for (int n = 0; n < ns.length; n++) {
 
-           // maze.draw();
+                List<Point2D> solution = null;
+                Maze maze = null;
+                int N = ns[n];
+                Vector v = new Vector();
+                for (int s = 0; s < 10000; s++) {
+                    StdDraw.clear();
+                    maze = new Maze(N);
+                    MazeSolver solver = new MazeSolver(maze);
+                    maze.setSolver(solver);
 
-            long start = System.nanoTime();
-            List<Point2D> solution = maze.solve();
-            long end = System.nanoTime();
-            long dur = TimeUnit.MILLISECONDS.convert(end - start, TimeUnit.NANOSECONDS);
-            System.out.println(s+ " Time to solve " + dur + "ms");
-            totalTime += dur;
-           /* for (int i = solution.size() - 1; i >= 0; i--) {
-                StdDraw.setPenColor(Color.blue);
-                StdDraw.filledCircle(solution.get(i).x + 0.5, solution.get(i).y + 0.5, 0.25);
+                    //ForkJoinPool pool = new ForkJoinPool(threadCount);
+                    long start = System.nanoTime();
+                    solution = maze.solve(pool);
+                    long end = System.nanoTime();
+                    //pool.shutdown();
+                    v.add((end - start) / 1000000.0f);
+                }
+                System.out.println("Using " + threadCount + " thread/s");
+                System.out.println("Average solving time for N = " + N + " is " + v.mean() / 1000000.0f + "ns");
+                System.out.println("Min solving time for N = " + N + " is " + v.minValue() / 1000000.0f + "ns");
+                System.out.println("Max solving time for N = " + N + " is " + v.maxValue() / 1000000.0f + "ns");
+                VectorUtils.saveToFile(v, "./bla/T" + threadCount + "N" + N + ".csv", ",");
+                //  drawMazeWithSolution(maze, solution);
 
-                //sleeps for 30 ms
-                StdDraw.show(1);
-            }*/
+            }
+
+            pool.shutdownNow();
         }
-        System.out.println("Average solving time for N = " + N + " is " + (totalTime / 100.0) + "ms");
+
+    }
+
+    public static void drawMazeWithSolution(Maze maze, List<Point2D> solution) {
+        StdDraw.show(0);
+        maze.draw();
+        for (int i = solution.size() - 1; i >= 0; i--) {
+            StdDraw.setPenColor(Color.blue);
+            StdDraw.filledCircle(solution.get(i).x + 0.5, solution.get(i).y + 0.5, 0.25);
+
+            // for 30 ms
+            StdDraw.show(1);
+        }
     }
 
 }

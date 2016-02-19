@@ -1,13 +1,9 @@
 package assign01;
 
-import com.sun.istack.internal.logging.Logger;
-import java.awt.Color;
-import java.awt.Point;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RecursiveTask;
-import org.w3c.dom.css.RGBColor;
 
 /**
  * Assignment 01 - Implement parallel maze solving algorithm using JAVA
@@ -37,17 +33,18 @@ public class MazeSolver {
      * @param x starting position in x direction
      * @param y starting position in y direction
      */
-    public List<Point2D> solveMaze(int x, int y) {
+    public List<Point2D> solveMaze(int x, int y, ForkJoinPool pool) {
         //Set current position to initial position
         this.x = x;
         this.y = y;
 
         // TODO Your algorithm here. If necessary, create onother methods (for example, recursive solve method)
         // Use theses lines where necessary to draw movement of the solver
-        ForkJoinPool pool = new ForkJoinPool(7);
+        //ForkJoinPool pool = new ForkJoinPool(5);
         RecursiveSolver solver = new RecursiveSolver(maze, x, y);
-        return pool.invoke(solver);
-        
+        List<Point2D> p = pool.invoke(solver);
+        //pool.shutdownNow();
+        return p;
     }
 
 }
@@ -75,32 +72,54 @@ class RecursiveSolver extends RecursiveTask<List<Point2D>> {
         }
 
         List<RecursiveSolver> solvers = new ArrayList<>();
-        if (!maze.isEast(x, y) && !maze.isVisited(x + 1, y)) {
+        if (!maze.isEast(x, y) && !maze.isVisited(x + 1, y) && !isDeadEnd(x + 1, y)) {
             solvers.add(new RecursiveSolver(maze, x + 1, y));
-            solvers.get(solvers.size() - 1).fork();
         }
-        if (!maze.isWest(x, y) && !maze.isVisited(x - 1, y)) {
+        if (!maze.isWest(x, y) && !maze.isVisited(x - 1, y) && !isDeadEnd(x - 1, y)) {
             solvers.add(new RecursiveSolver(maze, x - 1, y));
-            solvers.get(solvers.size() - 1).fork();
         }
-        if (!maze.isSouth(x, y) && !maze.isVisited(x, y - 1)) {
+        if (!maze.isSouth(x, y) && !maze.isVisited(x, y - 1) && !isDeadEnd(x, y - 1)) {
             solvers.add(new RecursiveSolver(maze, x, y - 1));
-            solvers.get(solvers.size() - 1).fork();
         }
-        if (!maze.isNorth(x, y) && !maze.isVisited(x, y + 1)) {
+        if (!maze.isNorth(x, y) && !maze.isVisited(x, y + 1) && !isDeadEnd(x, y + 1)) {
             solvers.add(new RecursiveSolver(maze, x, y + 1));
-            solvers.get(solvers.size() - 1).fork();
         }
 
-        for (RecursiveSolver solver : solvers) {
-            List<Point2D> l = solver.join();
+        if (solvers.size() > 1) {
+            for (int i = 1; i < solvers.size(); i++) {
+                solvers.get(i).fork();
+            }
+        }
+        List<Point2D> l = null;
+        for (int i = 0; i < solvers.size(); i++) {
+            RecursiveSolver solver = solvers.get(i);
+            
+            if (solvers.size() > 1 && i != 0) {
+                l = solver.join();
+            } else {
+                l = solver.compute();
+            }
             if (l != null) {
                 l.add(new Point2D(x, y, Thread.currentThread().getName()));
                 return l;
+
             }
         }
 
         return null;
+
+    }
+
+    public boolean isDeadEnd(int x, int y) {
+        // return false;/*
+        if (x == maze.getDim() && y == maze.getDim()) {
+            return false;
+        }
+        return (maze.isVisited(x, y + 1) && maze.isEast(x, y) && maze.isWest(x, y) && maze.isNorth(x, y))
+                || (maze.isVisited(x, y - 1) && maze.isEast(x, y) && maze.isWest(x, y) && maze.isSouth(x, y))
+                || (maze.isVisited(x + 1, y) && maze.isSouth(x, y) && maze.isWest(x, y) && maze.isNorth(x, y))
+                || (maze.isVisited(x - 1, y) && maze.isEast(x, y) && maze.isSouth(x, y) && maze.isNorth(x, y));
+//*/
     }
 
 }
