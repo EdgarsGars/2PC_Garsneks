@@ -12,11 +12,8 @@ package m03ConcurrencyAPI.activity;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RecursiveTask;
-import m03ConcurrencyAPI.ForkJoinTest;
 
 public class Activity extends RecursiveTask<List<String>> {
 
@@ -61,7 +58,6 @@ public class Activity extends RecursiveTask<List<String>> {
             list.addAll(activity.join());
 
         }
-
         //Return the list of strings
         return list;
     }
@@ -74,7 +70,7 @@ public class Activity extends RecursiveTask<List<String>> {
     //Write main methods executing task or tasks. Give a live feedback. Show results.
     public static void main(String args[]) {
         final ForkJoinPool pool = new ForkJoinPool(3);
-        Activity task = new Activity("./", "java");
+        Activity task = new Activity("/home/itmuser", "java");
         List<String> list = pool.invoke(task);
         for (String string : list) {
             System.out.println(string);
