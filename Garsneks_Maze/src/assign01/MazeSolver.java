@@ -72,6 +72,9 @@ class RecursiveSolver extends RecursiveTask<List<Point2D>> {
         }
 
         List<RecursiveSolver> solvers = new ArrayList<>();
+        if (!maze.isNorth(x, y) && !maze.isVisited(x, y + 1) && !isDeadEnd(x, y + 1)) {
+            solvers.add(new RecursiveSolver(maze, x, y + 1));
+        }
         if (!maze.isEast(x, y) && !maze.isVisited(x + 1, y) && !isDeadEnd(x + 1, y)) {
             solvers.add(new RecursiveSolver(maze, x + 1, y));
         }
@@ -81,19 +84,15 @@ class RecursiveSolver extends RecursiveTask<List<Point2D>> {
         if (!maze.isSouth(x, y) && !maze.isVisited(x, y - 1) && !isDeadEnd(x, y - 1)) {
             solvers.add(new RecursiveSolver(maze, x, y - 1));
         }
-        if (!maze.isNorth(x, y) && !maze.isVisited(x, y + 1) && !isDeadEnd(x, y + 1)) {
-            solvers.add(new RecursiveSolver(maze, x, y + 1));
+
+        for (int i = 1; i < solvers.size(); i++) {
+            solvers.get(i).fork();
         }
 
-        if (solvers.size() > 1) {
-            for (int i = 1; i < solvers.size(); i++) {
-                solvers.get(i).fork();
-            }
-        }
         List<Point2D> l = null;
         for (int i = 0; i < solvers.size(); i++) {
             RecursiveSolver solver = solvers.get(i);
-            
+
             if (solvers.size() > 1 && i != 0) {
                 l = solver.join();
             } else {
