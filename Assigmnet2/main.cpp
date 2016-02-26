@@ -2,77 +2,97 @@
 #include <boost/mpi/environment.hpp>
 #include <boost/mpi/communicator.hpp>
 #include <omp.h>
+
+#include <boost/multiprecision/cpp_int.hpp>
 #include <boost/serialization/string.hpp>
 #include <boost/math/special_functions/prime.hpp>
 #include <iostream>
+#include <time.h>
+
+
+#define STARTPOS 1
+#define ENDPOS 2
+#define TARGET 3
+#define SOLUTIONFOUND 4
+#define ABORT 5
+
 namespace mpi = boost::mpi;
+namespace big = boost::multiprecision;
 
 int main() {
     mpi::environment env;
     mpi::communicator world;
-    bool done = false;
-    while (!done) {
-        unsigned long N = boost::math::prime(5000) * boost::math::prime(4000);
-        double sqrtN = std::floor(std::sqrt(N));
-        if (world.rank() == 0) {
-            /* Do something at root process if needed */
-            std::cout << "Key to crack: " << N << std::endl;
-            std::cout << "SQRT " << sqrtN << std::endl;
-            if ((int) sqrtN % 2 == 0) {
-                sqrtN--;
-            }
-            int nodeCount = world.size();
-            int perNode = sqrtN / nodeCount;
-            for (int i = 1; i < nodeCount; i++) {
-                world.send(i, 0, perNode);
-                world.send(i, 1, N);
-            }
+    double wall_timer = omp_get_wtime();
 
-            for (long i = 1; i < perNode; i += 2) {
-                if (N % i == 0) {
-                    std::cout << "P " << i << std::endl;
-                    std::cout << "Q " << N / i << std::endl;
-                }
-            }
+    if (world.rank() == 0) {
+        //big::cpp_int N = boost::math::prime(5000) * boost::math::prime(6000);
+        //big::cpp_int N = 819173l * 226337l;
+        //big::cpp_int N = 15485077ull * 15485471ul;
+        big::cpp_int sqrtN = big::sqrt(N);
 
-            std::cout << "Node count " << nodeCount << " perNode " << perNode << std::endl;
+        std::cout << "Key to crack: " << N << std::endl;
+        std::cout << "SQRT " << sqrtN << std::endl;
 
-        } else {
-            int perNode;
-            unsigned long N;
-            world.recv(0, 0, perNode);
-            world.recv(0, 1, N);
-            // std::cout << env.processor_name() << ": Check from " << world.rank() * perNode << " to " << world.rank() * perNode + perNode << std::endl;
-            long start = perNode * world.rank();
-            if (start % 2 == 0) {
-                start--;
-            }
+        if (sqrtN % 2 == 0) {
+            sqrtN--;
+        }
+        big::cpp_int P = 0;
+        boost::mpi::request r = world.irecv(mpi::any_source, SOLUTIONFOUND, P);
+        int nodeCount = world.size();
+        big::cpp_int perNode = sqrtN / nodeCount;
+        std::cout << "Node count " << nodeCount << " perNode " << perNode << std::endl;
 #pragma omp parallel for num_threads(3)
-            for (long i = start; i < perNode * world.rank() + perNode; i += 2) {
-                if (N % i == 0) {
-                    std::cout << env.processor_name() << ": P " << i << std::endl;
-                    std::cout << env.processor_name() << ": Q " << N / i << std::endl;
-                }
+        for (int i = 1; i < nodeCount; i++) {
+            big::cpp_int start = i*perNode;
+            big::cpp_int end = start + perNode;
+            world.send(i, STARTPOS, start);
+            world.send(i, ENDPOS, end);
+            world.send(i, TARGET, N);
+        }
+#pragma omp parallel for num_threads(3)
+        for (big::cpp_int i = 3; i < perNode; i += 2) {
+            if (N % i == 0) {
+                world.send(0, SOLUTIONFOUND, i);
+                break;
             }
         }
-        /* 
-           Simple serial pseidoalgorithm for finding P and Q
+        std::cout << "Waiting.. " << P << std::endl;
+        while (!r.test()) {
+        }
 
-           P = a_prime
-           Q = next_prime_after(P)
+        std::cout << "Time to solve " << omp_get_wtime() - wall_timer << std::endl;
+        for (int i = 1; i < nodeCount; i++) {
+            world.send(i, ABORT, 1);
+        }
+        std::cout << "Found solution! " << P << "*" << N / P << "=" << P * (N / P) << std::endl;
 
-           while P != Q && P*Q != N 
-              Q = next_prime
-                    if ( Q >= sqrt(N) )
-                P = next_prime
-                Q = next_prime_after(P)
+    } else {
+        big::cpp_int abort = 0;
+        boost::mpi::request r = world.irecv(0, ABORT, abort);
+        big::cpp_int N;
+        big::cpp_int start;
+        big::cpp_int end;
 
-         */
+        world.recv(0, STARTPOS, start);
+        world.recv(0, ENDPOS, end);
+        world.recv(0, TARGET, N);
 
-        // TODO implement the serial (or other prime cracker) algorithm in parallel, using OpenMP and Boost.MPI
-        break;
-
+        std::cout << "Node " << world.rank() << " starting to work" << std::endl;
+        if (start % 2 == 0) {
+            start--;
+        }
+#pragma omp parallel for num_threads(3)
+        for (big::cpp_int i = start; i < end; i += 2) {
+            if (N % i == 0) {
+                world.send(0, SOLUTIONFOUND, i);
+                break;
+            } else if (r.test()) {
+                std::cout << "Node " << world.rank() << " aborted work" << std::endl;
+                return 0;
+            }
+        }
     }
 
+    std::cout << "Node " << world.rank() << " finished work" << std::endl;
     return 0;
 }
