@@ -28,11 +28,11 @@ int main() {
     mpi::communicator world;
 
     if (world.rank() == 0) {
-        //masterNode();
-        masterNodeRandom();
+       masterNode();
+       //masterNodeRandom();
     } else {
-        // slaveNode();
-        slaveNodeRandom();
+         slaveNode();
+        //slaveNodeRandom();
     }
     return 0;
 }

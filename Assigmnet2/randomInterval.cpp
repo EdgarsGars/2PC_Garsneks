@@ -42,11 +42,13 @@ void masterNode() {
     double wall_timer = omp_get_wtime();
     mpi::environment env;
     mpi::communicator world;
+
+big::cpp_int N =boost::math::prime(1000) * boost::math::prime(2000);
     //big::cpp_int N = boost::math::prime(5000) * boost::math::prime(6000);
     //big::cpp_int N = 819173l * 226337l;
     vec::vector<big::cpp_int> chunks;
 
-    big::cpp_int N = 15485077ull * 819173l;
+   // big::cpp_int N = 15485077ull * 819173l;
     big::cpp_int sqrtN = big::sqrt(N);
     std::cout << "Key to crack: " << N << std::endl;
     std::cout << "SQRT " << sqrtN << std::endl;
@@ -137,7 +139,7 @@ void masterNodeRandom() {
         Generate interval chunks
      */
 
-    long chunkCount = 100;
+    long chunkCount = world.size();
     big::cpp_int perNode = sqrtN / chunkCount;
 
     for (int i = 0; i < chunkCount; i++) {
@@ -202,15 +204,15 @@ void slaveNodeRandom() {
     while (true) {
         start = 0;
         end = 0;
-        boost::mpi::request startR = world.irecv(0, STARTPOS, start);
-        boost::mpi::request endR = world.irecv(0, ENDPOS, end);
-        boost::mpi::request NR = world.irecv(0, TARGET, N);
+      world.recv(0, STARTPOS, start);
+      world.recv(0, ENDPOS, end);
+      world.recv(0, TARGET, N);
 
-        while (!startR.test() && !endR.test() && !NR.test()) {
-            if (r.test()) {
-                return;
-            }
-        }
+        //while (!startR.test() && !endR.test() && !NR.test()) {
+     //       if (r.test()) {
+     //           return;
+      //      }
+    //    }
 
         // std::cout << "Node " << env.processor_name() << "[" << world.rank() << "] starting work [" << start << "," << end << "]" << std::endl;
 
