@@ -15,19 +15,23 @@ import java.util.concurrent.ForkJoinPool;
 public class MazeOneTimer {
 
     public static void main(String[] args) {
-        int N = 100;
-        Maze maze = new Maze(N);
-        MazeSolver s = new MazeSolver(maze);
-        maze.setSolver(s);
+
         ForkJoinPool pool = new ForkJoinPool(7);
-        long start = System.nanoTime();
-        List<Point2D> p = maze.solve(pool);
-        long end = System.nanoTime();
-        System.out.println("Time to solve " + (end - start) / 1000000.0f + "ms");
-        System.out.println("Total step " + p.size());
-        System.out.println("Steal count " + pool.getStealCount());
-        pool.shutdown();
-       // Maze.drawMazeWithSolution(maze, p);
-       System.exit(0);
+        while (true) {
+            StdDraw.clear();
+            int N = 100;
+            Maze maze = new Maze(N);
+            MazeSolver s = new MazeSolver(maze);
+            maze.setSolver(s);
+            long start = System.nanoTime();
+            List<Point2D> p = maze.solve(pool);
+            long end = System.nanoTime();
+            System.out.println("Time to solve " + (end - start) / 1000000.0f + "ms");
+            System.out.println("Total step " + p.size());
+            System.out.println("Steal count " + pool.getStealCount());
+
+            Maze.drawMazeWithSolution(maze, p);
+        }
+
     }
 }

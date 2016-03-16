@@ -6,9 +6,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
-import lv.edgarsgars.mathematics.Vector;
-import lv.edgarsgars.utils.VectorUtils;
-import lv.edgarsgars.vizualization.Plot;
 
 /**
  * Generates a perfect N-by-N maze.
@@ -176,7 +173,7 @@ public class Maze {
                 List<Point2D> solution = null;
                 Maze maze = null;
                 int N = ns[n];
-                Vector v = new Vector();
+                //  Vector v = new Vector();
                 for (int s = 0; s < 10000; s++) {
                     StdDraw.clear();
                     maze = new Maze(N);
@@ -188,13 +185,13 @@ public class Maze {
                     solution = maze.solve(pool);
                     long end = System.nanoTime();
                     //pool.shutdown();
-                    v.add((end - start) / 1000000.0f);
+                    //  v.add((end - start) / 1000000.0f);
                 }
-                System.out.println("Using " + threadCount + " thread/s");
-                System.out.println("Average solving time for N = " + N + " is " + v.mean() / 1000000.0f + "ns");
-                System.out.println("Min solving time for N = " + N + " is " + v.minValue() / 1000000.0f + "ns");
-                System.out.println("Max solving time for N = " + N + " is " + v.maxValue() / 1000000.0f + "ns");
-                VectorUtils.saveToFile(v, "./bla/T" + threadCount + "N" + N + ".csv", ",");
+                //System.out.println("Using " + threadCount + " thread/s");
+                // System.out.println("Average solving time for N = " + N + " is " + v.mean() / 1000000.0f + "ns");
+                //   System.out.println("Min solving time for N = " + N + " is " + v.minValue() / 1000000.0f + "ns");
+                //   System.out.println("Max solving time for N = " + N + " is " + v.maxValue() / 1000000.0f + "ns");
+                //  VectorUtils.saveToFile(v, "./bla/T" + threadCount + "N" + N + ".csv", ",");
                 //  drawMazeWithSolution(maze, solution);
 
             }
