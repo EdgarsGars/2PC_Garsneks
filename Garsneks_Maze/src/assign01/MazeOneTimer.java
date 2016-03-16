@@ -17,7 +17,6 @@ public class MazeOneTimer {
     public static void main(String[] args) {
 
         ForkJoinPool pool = new ForkJoinPool(7);
-        while (true) {
             StdDraw.clear();
             int N = 100;
             Maze maze = new Maze(N);
@@ -31,7 +30,7 @@ public class MazeOneTimer {
             System.out.println("Steal count " + pool.getStealCount());
 
             Maze.drawMazeWithSolution(maze, p);
-        }
+        
 
     }
 }

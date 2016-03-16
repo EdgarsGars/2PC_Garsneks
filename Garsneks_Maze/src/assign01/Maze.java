@@ -192,7 +192,7 @@ public class Maze {
                 //   System.out.println("Min solving time for N = " + N + " is " + v.minValue() / 1000000.0f + "ns");
                 //   System.out.println("Max solving time for N = " + N + " is " + v.maxValue() / 1000000.0f + "ns");
                 //  VectorUtils.saveToFile(v, "./bla/T" + threadCount + "N" + N + ".csv", ",");
-                //  drawMazeWithSolution(maze, solution);
+                  drawMazeWithSolution(maze, solution);
 
             }
 
